@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auto Report WA</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f0f0f;
+      color: #f0f0f0;
+      min-height: 100vh;
+      padding: 20px 16px;
+    }
+
+    h1 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #25d366;
+      margin-bottom: 6px;
+    }
+
+    p.sub {
+      font-size: 0.8rem;
+      color: #888;
+      margin-bottom: 24px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      color: #aaa;
+      margin-bottom: 6px;
+      margin-top: 16px;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 10px;
+      color: #f0f0f0;
+      font-size: 1rem;
+      padding: 12px 14px;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      border-color: #25d366;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 120px;
+    }
+
+    .recipients {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .recipient-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .recipient-row input {
+      flex: 1;
+    }
+
+    .btn-remove {
+      background: #2a0a0a;
+      border: 1px solid #5a1a1a;
+      color: #ff6b6b;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .btn-add {
+      background: #0a2a1a;
+      border: 1px solid #1a5a2a;
+      color: #25d366;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    .template-btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .btn-template {
+      background: #1a1a2a;
+      border: 1px solid #2a2a4a;
+      color: #aab;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+
+    .btn-template:active { background: #2a2a4a; }
+
+    .btn-send {
+      width: 100%;
+      background: #25d366;
+      color: #000;
+      font-weight: 700;
+      font-size: 1rem;
+      border: none;
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 24px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .btn-send:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-send:active { opacity: 0.8; }
+
+    #status {
+      margin-top: 16px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      display: none;
+    }
+
+    #status.success {
+      background: #0a2a1a;
+      border: 1px solid #25d366;
+      color: #25d366;
+      display: block;
+    }
+
+    #status.error {
+      background: #2a0a0a;
+      border: 1px solid #ff6b6b;
+      color: #ff6b6b;
+      display: block;
+    }
+
+    #status.loading {
+      background: #1a1a0a;
+      border: 1px solid #aaa933;
+      color: #ccc833;
+      display: block;
+    }
+
+    .log-section {
+      margin-top: 32px;
+      padding-top: 20px;
+      border-top: 1px solid #1a1a1a;
+    }
+
+    .log-section h2 {
+      font-size: 0.9rem;
+      color: #888;
+      margin-bottom: 12px;
+    }
+
+    .log-item {
+      background: #1a1a1a;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.78rem;
+      color: #aaa;
+      margin-bottom: 8px;
+      border-left: 3px solid #2a2a2a;
+    }
+
+    .log-item.ok { border-left-color: #25d366; }
+    .log-item.fail { border-left-color: #ff6b6b; }
+
+    .settings-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .settings-row > div { flex: 1; }
+
+    .delay-note {
+      font-size: 0.72rem;
+      color: #666;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>📋 Auto Report WA</h1>
+  <p class="sub">Kirim laporan otomatis via WhatsApp</p>
+
+  <!-- API Token -->
+  <label>🔑 Fonnte Token</label>
+  <input type="password" id="token" placeholder="Token dari fonnte.id" 
+         value="" autocomplete="off">
+
+  <!-- Template -->
+  <label>📝 Template Pesan</label>
+  <div class="template-btns">
+    <button class="btn-template" onclick="applyTemplate('daily')">Laporan Harian</button>
+    <button class="btn-template" onclick="applyTemplate('absen')">Absensi</button>
+    <button class="btn-template" onclick="applyTemplate('progress')">Progress Kerja</button>
+    <button class="btn-template" onclick="applyTemplate('custom')">Custom</button>
+  </div>
+
+  <!-- Pesan -->
+  <label>💬 Isi Pesan</label>
+  <textarea id="message" placeholder="Tulis pesan laporan..."></textarea>
+
+  <!-- Preview variabel -->
+  <div style="font-size:0.72rem; color:#666; margin-top:4px;">
+    Variabel: <code style="color:#aaa">{{tanggal}}</code> <code style="color:#aaa">{{nama}}</code> <code style="color:#aaa">{{waktu}}</code>
+  </div>
+
+  <!-- Nama pengirim -->
+  <label>👤 Nama Pengirim</label>
+  <input type="text" id="sender-name" placeholder="Nama kamu (untuk variabel {{nama}})">
+
+  <!-- Penerima -->
+  <label>📱 Nomor Penerima (format: 628xxx)</label>
+  <div class="recipients" id="recipients-list">
+    <div class="recipient-row">
+      <input type="tel" class="recipient-input" placeholder="628xxxxxxxxxx">
+    </div>
+  </div>
+  <button class="btn-add" onclick="addRecipient()">+ Tambah Nomor</button>
+
+  <!-- Delay -->
+  <label>⏱️ Delay Antar Pesan</label>
+  <div class="settings-row">
+    <div>
+      <input type="number" id="delay" value="3" min="1" max="60">
+      <div class="delay-note">detik (min 1, Fonnte rate limit)</div>
+    </div>
+    <div>
+      <select id="device-target">
+        <option value="">Device pertama (default)</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Kirim -->
+  <button class="btn-send" id="btn-send" onclick="sendAll()">
+    📤 Kirim Laporan
+  </button>
+
+  <div id="status"></div>
+
+  <!-- Log -->
+  <div class="log-section">
+    <h2>📊 Log Pengiriman</h2>
+    <div id="log-list"></div>
+  </div>
+
+<script>
+  const TEMPLATES = {
+    daily: `📋 *LAPORAN HARIAN*
+Tanggal: {{tanggal}}
+Dari: {{nama}}
+Waktu: {{waktu}}
+
+✅ Pekerjaan selesai:
+- 
+
+⏳ Sedang berjalan:
+- 
+
+❗ Kendala:
+- 
+
+Terima kasih.`,
+
+    absen: `✅ *ABSENSI {{tanggal}}*
+
+Nama: {{nama}}
+Jam: {{waktu}}
+Status: Hadir
+
+Semangat kerja! 💪`,
+
+    progress: `📊 *UPDATE PROGRESS*
+{{tanggal}} | {{waktu}}
+PIC: {{nama}}
+
+Progress hari ini:
+▓▓▓▓▓░░░░░ 50%
+
+Detail:
+- 
+
+Next action:
+- `,
+
+    custom: ''
+  };
+
+  function applyTemplate(type) {
+    document.getElementById('message').value = TEMPLATES[type];
+  }
+
+  function resolveVars(text) {
+    const now = new Date();
+    const tanggal = now.toLocaleDateString('id-ID', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+    const waktu = now.toLocaleTimeString('id-ID', {
+      hour: '2-digit', minute: '2-digit'
+    });
+    const nama = document.getElementById('sender-name').value || 'Tim';
+
+    return text
+      .replace(/\{\{tanggal\}\}/g, tanggal)
+      .replace(/\{\{nama\}\}/g, nama)
+      .replace(/\{\{waktu\}\}/g, waktu);
+  }
+
+  function addRecipient() {
+    const list = document.getElementById('recipients-list');
+    const row = document.createElement('div');
+    row.className = 'recipient-row';
+    row.innerHTML = `
+      <input type="tel" class="recipient-input" placeholder="628xxxxxxxxxx">
+      <button class="btn-remove" onclick="this.parentElement.remove()">✕</button>
+    `;
+    list.appendChild(row);
+    row.querySelector('input').focus();
+  }
+
+  function getRecipients() {
+    return [...document.querySelectorAll('.recipient-input')]
+      .map(i => i.value.trim())
+      .filter(v => v.length > 5);
+  }
+
+  function addLog(nomor, status, note) {
+    const list = document.getElementById('log-list');
+    const item = document.createElement('div');
+    item.className = `log-item ${status === 'ok' ? 'ok' : 'fail'}`;
+    const time = new Date().toLocaleTimeString('id-ID');
+    item.textContent = `[${time}] ${nomor} — ${status === 'ok' ? '✅ Terkirim' : '❌ Gagal'} ${note ? '| ' + note : ''}`;
+    list.prepend(item);
+  }
+
+  function setStatus(msg, type) {
+    const el = document.getElementById('status');
+    el.className = type;
+    el.textContent = msg;
+  }
+
+  async function sendSingle(token, nomor, message) {
+    const resp = await fetch('/api/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, nomor, message })
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || 'Gagal kirim');
+    return data;
+  }
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  async function sendAll() {
+    const token = document.getElementById('token').value.trim();
+    const rawMsg = document.getElementById('message').value.trim();
+    const delay = parseInt(document.getElementById('delay').value) * 1000;
+    const recipients = getRecipients();
+
+    if (!token) return setStatus('⚠️ Masukkan Fonnte Token dulu.', 'error');
+    if (!rawMsg) return setStatus('⚠️ Pesan kosong.', 'error');
+    if (recipients.length === 0) return setStatus('⚠️ Minimal satu nomor penerima.', 'error');
+
+    const message = resolveVars(rawMsg);
+    const btn = document.getElementById('btn-send');
+    btn.disabled = true;
+
+    setStatus(`⏳ Mengirim ke ${recipients.length} nomor...`, 'loading');
+
+    let ok = 0, fail = 0;
+
+    for (let i = 0; i < recipients.length; i++) {
+      const nomor = recipients[i];
+      setStatus(`⏳ Mengirim ${i + 1}/${recipients.length}: ${nomor}...`, 'loading');
+      try {
+        await sendSingle(token, nomor, message);
+        addLog(nomor, 'ok', '');
+        ok++;
+      } catch (err) {
+        addLog(nomor, 'fail', err.message);
+        fail++;
+      }
+      if (i < recipients.length - 1) await sleep(delay);
+    }
+
+    setStatus(
+      `✅ Selesai: ${ok} berhasil, ${fail} gagal.`,
+      fail === 0 ? 'success' : 'error'
+    );
+    btn.disabled = false;
+  }
+
+  // Load token dari localStorage biar ga perlu isi ulang
+  window.addEventListener('load', () => {
+    const saved = localStorage.getItem('fonnte_token');
+    if (saved) document.getElementById('token').value = saved;
+
+    document.getElementById('token').addEventListener('blur', function() {
+      localStorage.setItem('fonnte_token', this.value);
+    });
+  });
+</script>
+</body>
+</html>
